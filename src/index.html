@@ -45,27 +45,6 @@
           <p>Your personal finance dashboard is ready. Start tracking your income, expenses, and investments.</p>
         </div>
 
-        <section class="upload-section">
-          <div class="card upload-card">
-            <div class="upload-header">
-              <h3>Upload Transactions</h3>
-              <p>Upload your CSV or Text files to parse records</p>
-            </div>
-            <div class="upload-dropzone" id="dropzone">
-              <input type="file" id="file-input" accept=".csv,.txt" hidden />
-              <div class="dropzone-content">
-                <div class="icon">📁</div>
-                <p>Click to browse or drag and drop your file here</p>
-                <span class="file-hint">Supported formats: .csv, .txt</span>
-              </div>
-            </div>
-            <div id="file-info" class="file-info hidden">
-              <span class="account-badge" id="account-name"></span>
-              <span class="file-name" id="selected-file-name"></span>
-            </div>
-          </div>
-        </section>
-
         <div class="stats-grid">
           <div class="card stat-card">
             <div class="stat-label">Balance</div>
@@ -100,6 +79,27 @@
               <thead><tr id="table-head"></tr></thead>
               <tbody id="table-body"></tbody>
             </table>
+          </div>
+        </section>
+
+        <section class="upload-section">
+          <div class="card upload-card">
+            <div class="upload-header">
+              <h3>Upload Transactions</h3>
+              <p>Upload your CSV or Text files to parse records</p>
+            </div>
+            <div class="upload-dropzone" id="dropzone">
+              <input type="file" id="file-input" accept=".csv,.txt" hidden />
+              <div class="dropzone-content">
+                <div class="icon">📁</div>
+                <p>Click to browse or drag and drop your file here</p>
+                <span class="file-hint">Supported formats: .csv, .txt</span>
+              </div>
+            </div>
+            <div id="file-info" class="file-info hidden">
+              <span class="account-badge" id="account-name"></span>
+              <span class="file-name" id="selected-file-name"></span>
+            </div>
           </div>
         </section>
       </main>
