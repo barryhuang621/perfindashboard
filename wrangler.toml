@@ -1,0 +1,11 @@
+name = "perfin-dashboard"
+compatibility_date = "2025-01-01"
+
+# Cloudflare Pages project settings
+pages_build_output_dir = "dist"
+
+# D1 Database binding
+[[d1_databases]]
+binding = "DB"
+database_name = "perfin-db"
+database_id = "local-dev-id"

@@ -1,0 +1,17 @@
+{
+  "name": "perfin-dashboard",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler pages dev dist --port 5173 --proxy 5174",
+    "vite": "vite --host --port 5174",
+    "build": "vite build",
+    "preview": "vite preview",
+    "deploy": "npm run build && wrangler pages deploy dist"
+  },
+  "devDependencies": {
+    "vite": "^6.2.0",
+    "wrangler": "^3.109.0"
+  }
+}
