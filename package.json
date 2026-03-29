@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "concurrently \"npm run vite\" \"npm run wrangler\"",
     "vite": "vite --host --port 5174",
-    "wrangler": "wrangler pages dev --port 5173 --proxy 5174",
+    "wrangler": "wrangler pages dev src --port 5173 --proxy 5174",
     "build": "vite build",
     "preview": "vite preview",
     "deploy": "npm run build && wrangler pages deploy dist",

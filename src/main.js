@@ -2,11 +2,16 @@
  * Personal Finance Dashboard - Main Entry Point
  */
 
-import './style.css';
-
 async function init() {
   console.log('💰 Personal Finance Dashboard loaded');
 
+  // Elements
+  const sidebar = document.getElementById('sidebar');
+  const sidebarToggle = document.getElementById('sidebar-toggle');
+  const navItems = document.querySelectorAll('.nav-item');
+  const homeView = document.getElementById('home-view');
+  const addItemView = document.getElementById('add-item-view');
+  
   const fileInput = document.getElementById('file-input');
   const dropzone = document.getElementById('dropzone');
   const fileInfo = document.getElementById('file-info');
@@ -16,6 +21,91 @@ async function init() {
   const tableHead = document.getElementById('table-head');
   const tableBody = document.getElementById('table-body');
   const clearBtn = document.getElementById('clear-btn');
+
+  // Asset Form Elements
+  const assetCategory = document.getElementById('asset-category');
+  const subCategory = document.getElementById('sub-category');
+  const assetTarget = document.getElementById('asset-target');
+  const addAssetBtn = document.getElementById('add-asset-btn');
+
+  // 1. Sidebar Toggle Logic
+  sidebarToggle.addEventListener('click', () => {
+    sidebar.classList.toggle('collapsed');
+    // Also handle mobile state if needed
+    if (window.innerWidth <= 768) {
+      sidebar.classList.toggle('active');
+    }
+  });
+
+  // 2. View Switching Logic
+  navItems.forEach(item => {
+    item.addEventListener('click', () => {
+      const view = item.getAttribute('data-view');
+      
+      // Update Nav UI
+      navItems.forEach(i => i.classList.remove('active'));
+      item.classList.add('active');
+
+      // Switch View
+      if (view === 'home') {
+        homeView.classList.remove('hidden');
+        addItemView.classList.add('hidden');
+      } else if (view === 'add-item') {
+        homeView.classList.add('hidden');
+        addItemView.classList.remove('hidden');
+      }
+
+      // Close sidebar on mobile after selection
+      if (window.innerWidth <= 768) {
+        sidebar.classList.remove('active');
+      }
+    });
+  });
+
+  // 3. Asset Submission Logic
+  addAssetBtn.addEventListener('click', async () => {
+    const data = {
+      category: assetCategory.value.trim(),
+      subCategory: subCategory.value.trim(),
+      target: assetTarget.value.trim()
+    };
+
+    if (!data.category || !data.subCategory || !data.target) {
+      alert('請填寫所有欄位');
+      return;
+    }
+
+    addAssetBtn.disabled = true;
+    addAssetBtn.textContent = '傳送中...';
+
+    try {
+      const res = await fetch('/api/assets', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+      
+      const result = await res.json();
+      
+      if (result.success) {
+        if (result.changes > 0) {
+          alert('✅ 項目已成功加入！');
+        } else {
+          alert('ℹ️ 項目已存在，未重複加入。');
+        }
+        // Optional: Reset form or switch back to home
+      } else {
+        alert('❌ 發生錯誤：' + result.error);
+      }
+    } catch (err) {
+      alert('❌ 網路錯誤，請稍後再試。');
+    } finally {
+      addAssetBtn.disabled = false;
+      addAssetBtn.textContent = '加入';
+    }
+  });
+
+  // --- Original File Parsing Logic ---
 
   // Trigger file input on click
   dropzone.addEventListener('click', () => fileInput.click());

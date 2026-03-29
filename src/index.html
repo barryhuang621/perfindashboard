@@ -13,6 +13,30 @@
 </head>
 <body>
   <div id="app">
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <button id="sidebar-toggle" class="sidebar-toggle">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="3" y1="12" x2="21" y2="12"></line>
+            <line x1="3" y1="6" x2="21" y2="6"></line>
+            <line x1="3" y1="18" x2="21" y2="18"></line>
+          </svg>
+        </button>
+        <span class="sidebar-title">選單</span>
+      </div>
+      <nav class="sidebar-nav">
+        <button class="nav-item active" data-view="home">
+          <span class="icon">🏠</span>
+          <span class="label">首頁</span>
+        </button>
+        <button class="nav-item" data-view="add-item">
+          <span class="icon">➕</span>
+          <span class="label">新增項目</span>
+        </button>
+      </nav>
+    </aside>
+
     <div class="dashboard-container">
       <!-- Header -->
       <header class="header">
@@ -33,75 +57,120 @@
           </div>
           <h1 class="title">Personal Finance Dashboard</h1>
         </div>
-        <p class="subtitle">Your financial overview at a glance</p>
       </header>
 
-      <!-- Placeholder Cards -->
+      <!-- Main Content Wrapper -->
       <main class="main-content">
-        <div class="card card-welcome">
-          <div class="card-shimmer"></div>
-          <div class="card-icon">👋</div>
-          <h2>Welcome</h2>
-          <p>Your personal finance dashboard is ready. Start tracking your income, expenses, and investments.</p>
-        </div>
+        <!-- Home View -->
+        <div id="home-view">
+          <div class="card card-welcome">
+            <div class="card-shimmer"></div>
+            <div class="card-icon">👋</div>
+            <h2>Welcome</h2>
+            <p>Your personal finance dashboard is ready. Start tracking your income, expenses, and investments.</p>
+          </div>
 
-        <div class="stats-grid">
-          <div class="card stat-card">
-            <div class="stat-label">Balance</div>
-            <div class="stat-value">—</div>
-            <div class="stat-hint">Coming soon</div>
-          </div>
-          <div class="card stat-card">
-            <div class="stat-label">Income</div>
-            <div class="stat-value">—</div>
-            <div class="stat-hint">Coming soon</div>
-          </div>
-          <div class="card stat-card">
-            <div class="stat-label">Expenses</div>
-            <div class="stat-value">—</div>
-            <div class="stat-hint">Coming soon</div>
-          </div>
-          <div class="card stat-card">
-            <div class="stat-label">Savings</div>
-            <div class="stat-value">—</div>
-            <div class="stat-hint">Coming soon</div>
-          </div>
-        </div>
-
-        <!-- Data Preview Table -->
-        <section class="data-preview hidden" id="preview-section">
-          <div class="preview-header">
-            <h3>Transaction Preview</h3>
-            <button id="clear-btn" class="btn-text">Clear Data</button>
-          </div>
-          <div class="table-frame">
-            <table id="data-table">
-              <thead><tr id="table-head"></tr></thead>
-              <tbody id="table-body"></tbody>
-            </table>
-          </div>
-        </section>
-
-        <section class="upload-section">
-          <div class="card upload-card">
-            <div class="upload-header">
-              <h3>Upload Transactions</h3>
-              <p>Upload your CSV or Text files to parse records</p>
+          <div class="stats-grid">
+            <div class="card stat-card">
+              <div class="stat-label">Balance</div>
+              <div class="stat-value">—</div>
+              <div class="stat-hint">Coming soon</div>
             </div>
-            <div class="upload-dropzone" id="dropzone">
-              <input type="file" id="file-input" accept=".csv,.txt" hidden />
-              <div class="dropzone-content">
-                <div class="icon">📁</div>
-                <p>Click to browse or drag and drop your file here</p>
-                <span class="file-hint">Supported formats: .csv, .txt</span>
+            <div class="card stat-card">
+              <div class="stat-label">Income</div>
+              <div class="stat-value">—</div>
+              <div class="stat-hint">Coming soon</div>
+            </div>
+            <div class="card stat-card">
+              <div class="stat-label">Expenses</div>
+              <div class="stat-value">—</div>
+              <div class="stat-hint">Coming soon</div>
+            </div>
+            <div class="card stat-card">
+              <div class="stat-label">Savings</div>
+              <div class="stat-value">—</div>
+              <div class="stat-hint">Coming soon</div>
+            </div>
+          </div>
+
+          <!-- Data Preview Table -->
+          <section class="data-preview hidden" id="preview-section">
+            <div class="preview-header">
+              <h3>Transaction Preview</h3>
+              <button id="clear-btn" class="btn-text">Clear Data</button>
+            </div>
+            <div class="table-frame">
+              <table id="data-table">
+                <thead><tr id="table-head"></tr></thead>
+                <tbody id="table-body"></tbody>
+              </table>
+            </div>
+          </section>
+
+          <section class="upload-section">
+            <div class="card upload-card">
+              <div class="upload-header">
+                <h3>Upload Transactions</h3>
+                <p>Upload your CSV or Text files to parse records</p>
+              </div>
+              <div class="upload-dropzone" id="dropzone">
+                <input type="file" id="file-input" accept=".csv,.txt" hidden />
+                <div class="dropzone-content">
+                  <div class="icon">📁</div>
+                  <p>Click to browse or drag and drop your file here</p>
+                  <span class="file-hint">Supported formats: .csv, .txt</span>
+                </div>
+              </div>
+              <div id="file-info" class="file-info hidden">
+                <span class="account-badge" id="account-name"></span>
+                <span class="file-name" id="selected-file-name"></span>
               </div>
             </div>
-            <div id="file-info" class="file-info hidden">
-              <span class="account-badge" id="account-name"></span>
-              <span class="file-name" id="selected-file-name"></span>
+          </section>
+        </div>
+
+        <!-- Add Item View -->
+        <div id="add-item-view" class="hidden">
+          <div class="card add-item-card">
+            <div class="card-header">
+              <h3>新增項目</h3>
+              <p>輸入新的資產、負債或交易記錄</p>
+            </div>
+            <div class="form-container">
+              <div class="form-group">
+                <label for="asset-category">資產類別</label>
+                <input list="categories" id="asset-category" value="資產" placeholder="選擇或輸入類別" />
+                <datalist id="categories">
+                  <option value="資產">
+                  <option value="負債">
+                </datalist>
+              </div>
+
+              <div class="form-group">
+                <label for="sub-category">子類別</label>
+                <input list="sub-categories" id="sub-category" value="台灣股票" placeholder="選擇或輸入子類別" />
+                <datalist id="sub-categories">
+                  <option value="台灣股票">
+                  <option value="台灣基金">
+                </datalist>
+              </div>
+
+              <div class="form-group">
+                <label for="asset-target">標的</label>
+                <input list="targets" id="asset-target" value="00937B" placeholder="選擇或輸入標的" />
+                <datalist id="targets">
+                  <option value="00772B">
+                  <option value="00773B">
+                  <option value="00937B">
+                </datalist>
+              </div>
+
+              <div class="form-actions">
+                <button id="add-asset-btn" class="btn-primary">加入</button>
+              </div>
             </div>
           </div>
-        </section>
+        </div>
       </main>
 
       <!-- Footer -->

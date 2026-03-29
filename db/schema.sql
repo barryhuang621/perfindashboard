@@ -8,3 +8,12 @@ CREATE TABLE IF NOT EXISTS _migrations (
   name TEXT NOT NULL UNIQUE,
   applied_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
+CREATE TABLE IF NOT EXISTS asset_record (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  category TEXT NOT NULL,
+  sub_category TEXT NOT NULL,
+  target TEXT NOT NULL,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE(category, sub_category, target)
+);
