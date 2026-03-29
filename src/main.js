@@ -69,9 +69,9 @@ async function init() {
     console.log('🔄 Updating datalists from database...');
     const listBody = document.getElementById('asset-list-body');
     const baseline = {
-      categories: ['資產', '負債'],
-      subCategories: ['台灣股票', '台灣基金'],
-      targets: ['00772B', '00773B', '00937B']
+      categories: [],
+      subCategories: [],
+      targets: []
     };
 
     try {
