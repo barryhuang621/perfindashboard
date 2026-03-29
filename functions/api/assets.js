@@ -69,6 +69,9 @@ export async function onRequestDelete(context) {
   try {
     const { searchParams } = new URL(context.request.url);
     const id = searchParams.get('id');
+    
+    // Server-side logging (Visible in Wrangler dev terminal)
+    console.log(`🗑️ DELETE Request: Received ID [${id}]`);
 
     if (!id) {
       return new Response(JSON.stringify({ error: 'Missing ID' }), {
@@ -77,9 +80,13 @@ export async function onRequestDelete(context) {
       });
     }
 
+    // Explicitly use Number() to avoid type mismatch in SQLite
+    const numericId = Number(id);
     const result = await context.env.DB.prepare(
       'DELETE FROM asset_record WHERE id = ?'
-    ).bind(id).run();
+    ).bind(numericId).run();
+
+    console.log(`✅ DELETE Execution: Changes [${result.meta.changes}] for ID [${numericId}]`);
 
     return new Response(JSON.stringify({ 
       success: true, 
@@ -88,6 +95,7 @@ export async function onRequestDelete(context) {
       headers: { 'Content-Type': 'application/json' },
     });
   } catch (err) {
+    console.error(`❌ DELETE Error: ${err.message}`);
     return new Response(JSON.stringify({ error: err.message }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' },

@@ -160,22 +160,29 @@ async function init() {
         try {
           // Disable button during operation
           e.target.disabled = true;
+          const originalText = e.target.textContent;
           e.target.textContent = '...';
 
           const res = await fetch(`/api/assets?id=${id}`, { method: 'DELETE' });
-          const result = await res.json();
+          console.log(`🌐 Response Status: ${res.status}`);
+          
+          const text = await res.text();
+          console.log(`📄 Response Text: ${text}`);
+          
+          const result = JSON.parse(text);
           
           if (result.success) {
             console.log('✅ Record deleted successfully');
             updateFormDatalists();
           } else {
-            alert('❌ 刪除失敗：' + result.error);
+            console.error('❌ Server side error:', result.error);
+            alert('❌ 刪除失敗：' + (result.error || '不明錯誤'));
             e.target.disabled = false;
-            e.target.textContent = '刪除';
+            e.target.textContent = originalText;
           }
         } catch (err) {
-          console.error('❌ Network error during deletion:', err);
-          alert('❌ 網路錯誤，請稍後再試。');
+          console.error('❌ Client side error during deletion:', err);
+          alert('❌ 網路或解析錯誤，請見 Console');
           e.target.disabled = false;
           e.target.textContent = '刪除';
         }
