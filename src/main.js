@@ -97,13 +97,16 @@ async function init() {
         // 2. Update Debug Table
         if (listBody) {
           if (assets.length === 0) {
-            listBody.innerHTML = '<tr><td colspan="3" style="text-align: center;">資料庫為空</td></tr>';
+            listBody.innerHTML = '<tr><td colspan="4" style="text-align: center;">資料庫為空</td></tr>';
           } else {
             listBody.innerHTML = assets.map(a => `
               <tr>
                 <td>${a.category || '-'}</td>
                 <td>${a.sub_category || '-'}</td>
                 <td>${a.target || '-'}</td>
+                <td style="text-align: center;">
+                  <button onclick="deleteAssetRecord(${a.id})" class="btn-text" style="color: #ef4444; padding: 2px 4px;">刪除</button>
+                </td>
               </tr>
             `).join('');
           }
@@ -122,11 +125,52 @@ async function init() {
   function renderDatalist(id, options) {
     const datalist = document.getElementById(id);
     if (!datalist) return;
-    datalist.innerHTML = options
-      .filter(opt => opt) // Filter out null/empty
-      .map(opt => `<option value="${opt}">`)
-      .join('');
+    
+    // Robust approach: Clear all children first
+    while (datalist.firstChild) {
+      datalist.removeChild(datalist.firstChild);
+    }
+    
+    // Create new option elements
+    options
+      .filter(opt => opt)
+      .forEach(opt => {
+        const option = document.createElement('option');
+        option.value = opt;
+        datalist.appendChild(option);
+      });
+      
+    console.log(`📡 Datalist [${id}] updated with ${options.length} options`);
+    
+    // Force re-bind to the input to trigger browser refresh
+    const input = document.querySelector(`input[list="${id}"]`);
+    if (input) {
+      const currentListAttr = input.getAttribute('list');
+      input.setAttribute('list', '');
+      setTimeout(() => input.setAttribute('list', currentListAttr), 10);
+    }
   }
+
+  /**
+   * Global function to delete a record
+   */
+  window.deleteAssetRecord = async (id) => {
+    if (!confirm('確定要刪除這筆記錄嗎？')) return;
+
+    try {
+      const res = await fetch(`/api/assets?id=${id}`, { method: 'DELETE' });
+      const result = await res.json();
+      
+      if (result.success) {
+        console.log('✅ Record deleted:', id);
+        updateFormDatalists();
+      } else {
+        alert('❌ 刪除失敗：' + result.error);
+      }
+    } catch (err) {
+      alert('❌ 網路錯誤，請稍後再試。');
+    }
+  };
 
   // Populate datalists on initial load
   updateFormDatalists();
