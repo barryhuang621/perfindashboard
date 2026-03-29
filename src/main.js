@@ -64,9 +64,8 @@ async function init() {
     });
   });
 
-  // 2.5 Dynamic Datalist Logic
-  async function updateFormDatalists() {
-    console.log('🔄 Updating datalists from database...');
+  // 2.4 UI Update Logic (Unified)
+  function updateUI(assets) {
     const listBody = document.getElementById('asset-list-body');
     const baseline = {
       categories: [],
@@ -74,51 +73,53 @@ async function init() {
       targets: []
     };
 
+    if (!Array.isArray(assets)) return;
+
+    // 1. Update Datalists
+    const dbCategories = [...new Set(assets.map(a => a.category).filter(Boolean))];
+    const dbSubCategories = [...new Set(assets.map(a => a.sub_category).filter(Boolean))];
+    const dbTargets = [...new Set(assets.map(a => a.target).filter(Boolean))];
+
+    const categories = [...new Set([...baseline.categories, ...dbCategories])];
+    const subCategories = [...new Set([...baseline.subCategories, ...dbSubCategories])];
+    const targets = [...new Set([...baseline.targets, ...dbTargets])];
+
+    renderDatalist('categories', categories);
+    renderDatalist('sub-categories', subCategories);
+    renderDatalist('targets', targets);
+
+    // 2. Update Management Table
+    if (listBody) {
+      if (assets.length === 0) {
+        listBody.innerHTML = '<tr><td colspan="4" style="text-align: center;">資料庫為空</td></tr>';
+      } else {
+        listBody.innerHTML = assets.map(a => `
+          <tr>
+            <td>${a.category || '-'}</td>
+            <td>${a.sub_category || '-'}</td>
+            <td>${a.target || '-'}</td>
+            <td style="text-align: center;">
+              <button data-id="${a.id}" class="delete-asset-btn btn-text" style="color: #ef4444; padding: 2px 4px;">刪除</button>
+            </td>
+          </tr>
+        `).join('');
+      }
+    }
+    console.log('✅ UI updated with', assets.length, 'records');
+  }
+
+  // 2.5 Dynamic Datalist Logic
+  async function updateFormDatalists() {
+    console.log('🔄 Fetching fresh assets from database...');
     try {
       const res = await fetch('/api/assets?t=' + Date.now());
       const assets = await res.json();
-      
-      console.log('📊 Assets fetched for datalists:', assets);
-
-      if (Array.isArray(assets)) {
-        // 1. Update Datalists
-        const dbCategories = [...new Set(assets.map(a => a.category).filter(Boolean))];
-        const dbSubCategories = [...new Set(assets.map(a => a.sub_category).filter(Boolean))];
-        const dbTargets = [...new Set(assets.map(a => a.target).filter(Boolean))];
-
-        const categories = [...new Set([...baseline.categories, ...dbCategories])];
-        const subCategories = [...new Set([...baseline.subCategories, ...dbSubCategories])];
-        const targets = [...new Set([...baseline.targets, ...dbTargets])];
-
-        renderDatalist('categories', categories);
-        renderDatalist('sub-categories', subCategories);
-        renderDatalist('targets', targets);
-
-        // 2. Update Debug Table
-        if (listBody) {
-          if (assets.length === 0) {
-            listBody.innerHTML = '<tr><td colspan="4" style="text-align: center;">資料庫為空</td></tr>';
-          } else {
-            listBody.innerHTML = assets.map(a => `
-              <tr>
-                <td>${a.category || '-'}</td>
-                <td>${a.sub_category || '-'}</td>
-                <td>${a.target || '-'}</td>
-                <td style="text-align: center;">
-                  <button data-id="${a.id}" class="btn-text delete-asset-btn" style="color: #ef4444; padding: 2px 4px;">刪除</button>
-                </td>
-              </tr>
-            `).join('');
-          }
-        }
-        console.log('✅ Datalists and debug table updated successfully');
-      }
+      console.log('📊 Assets fetched:', assets);
+      updateUI(assets);
     } catch (err) {
       console.error('❌ Failed to fetch assets:', err);
-      if (listBody) listBody.innerHTML = `<tr><td colspan="3" style="color: red; text-align: center;">讀取失敗: ${err.message}</td></tr>`;
-      renderDatalist('categories', baseline.categories);
-      renderDatalist('sub-categories', baseline.subCategories);
-      renderDatalist('targets', baseline.targets);
+      // Even on failure, try to render whatever baseline we have (empty in this case)
+      updateUI([]);
     }
   }
 
@@ -163,32 +164,27 @@ async function init() {
           const originalText = e.target.textContent;
           e.target.textContent = '...';
 
-          // Using POST with action: 'delete' for maximum compatibility
-          const res = await fetch('/api/assets', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action: 'delete', id: id })
-          });
+          // Using ISOLATED GET for ultimate stability
+          alert('🚀 開始刪除... ID: ' + id);
+          const res = await fetch(`/api/delete-item?id=${id}&t=${Date.now()}`);
           
-          console.log(`🌐 Response Status: ${res.status}`);
+          alert('🌐 伺服器狀態碼: ' + res.status);
           
           const text = await res.text();
-          console.log(`📄 Response Text: ${text}`);
+          alert('📄 伺服器原始回傳: ' + text);
           
           const result = JSON.parse(text);
           
           if (result.success) {
-            console.log('✅ Record deleted successfully');
+            alert('✅ 成功刪除，更新介面中');
             updateFormDatalists();
           } else {
-            console.error('❌ Server side error:', result.error);
-            alert('❌ 刪除失敗：' + (result.error || '不明錯誤'));
+            alert('❌ 伺服器錯誤: ' + (result.error || '不明內容'));
             e.target.disabled = false;
             e.target.textContent = originalText;
           }
         } catch (err) {
-          console.error('❌ Client side error during deletion:', err);
-          alert('❌ 網路或解析錯誤，請見 Console');
+          alert('❌ 發生異常: ' + err.message);
           e.target.disabled = false;
           e.target.textContent = '刪除';
         }

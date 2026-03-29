@@ -60,6 +60,21 @@ export async function onRequestPost(context) {
  */
 export async function onRequestGet(context) {
   try {
+    const { searchParams } = new URL(context.request.url);
+    const id = searchParams.get('id');
+    const action = searchParams.get('action');
+
+    // Handle Deletion via GET (Unusual but most stable for development debugging)
+    if (action === 'delete' && id) {
+      console.log(`🗑️ GET-DELETE Request: Received ID [${id}]`);
+      const numericId = Number(id);
+      await context.env.DB.prepare(
+        'DELETE FROM asset_record WHERE id = ?'
+      ).bind(numericId).run();
+      console.log(`✅ GET-DELETE Success: ID [${numericId}]`);
+      // Fall through to list all, so UI gets the updated list in one go
+    }
+
     const { results } = await context.env.DB.prepare(
       'SELECT * FROM asset_record ORDER BY created_at DESC'
     ).all();
@@ -73,6 +88,7 @@ export async function onRequestGet(context) {
       },
     });
   } catch (err) {
+    console.error(`❌ GET Error: ${err.message}`);
     return new Response(JSON.stringify({ error: err.message }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' },
