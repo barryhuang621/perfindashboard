@@ -21,6 +21,12 @@ async function init() {
   const tableHead = document.getElementById('table-head');
   const tableBody = document.getElementById('table-body');
   const clearBtn = document.getElementById('clear-btn');
+  const archiveBtn = document.getElementById('archive-btn');
+
+  const filterOwn = document.getElementById('filter-owner');
+  const filterCat = document.getElementById('filter-category');
+  const filterSub = document.getElementById('filter-sub-category');
+  const filterTgt = document.getElementById('filter-target');
 
   // Asset Form Elements
   const assetCategory = document.getElementById('asset-category');
@@ -296,12 +302,18 @@ async function init() {
     if (e.target.files.length) handleFiles(e.target.files[0]);
   });
 
+  // --- Preview Logic & Selection ---
+  let selectedRowIndices = new Set();
+  let currentParsedRows = [];
+
+  // Clear button functionality
   clearBtn.addEventListener('click', () => {
     previewSection.classList.add('hidden');
     fileInfo.classList.add('hidden');
     tableHead.innerHTML = '';
     tableBody.innerHTML = '';
     fileInput.value = '';
+    selectedRowIndices.clear();
   });
 
   function handleFiles(file) {
@@ -321,10 +333,72 @@ async function init() {
     reader.readAsText(file);
   }
 
+  // Trigger filtering when filters change
+  [filterOwn, filterCat, filterSub, filterTgt].forEach(f => {
+    f.addEventListener('input', () => filterPreviewTable());
+  });
+
+  function filterPreviewTable() {
+    // 1. Global Filters
+    const globalFilters = [
+      filterOwn.value.toLowerCase().trim(),
+      filterCat.value.toLowerCase().trim(),
+      filterSub.value.toLowerCase().trim(),
+      filterTgt.value.toLowerCase().trim()
+    ].filter(Boolean);
+
+    // 2. Column-specific Filters
+    const colFilterInputs = Array.from(tableHead.querySelectorAll('.column-filter-input'));
+    const colFilters = colFilterInputs.map(input => input.value.toLowerCase().trim());
+
+    const rows = Array.from(tableBody.querySelectorAll('tr'));
+    
+    rows.forEach(row => {
+      const rowText = row.textContent.toLowerCase();
+      const cells = Array.from(row.querySelectorAll('td'));
+      
+      // Global Match (Must match ALL active global filters anywhere in the row)
+      const globalMatch = globalFilters.every(f => rowText.includes(f));
+      
+      // Column Match (Must match each filled column filter against its respective cell)
+      const columnMatch = colFilters.every((f, i) => {
+        if (!f) return true;
+        const cellText = (cells[i]?.textContent || '').toLowerCase();
+        return cellText.includes(f);
+      });
+
+      row.style.display = (globalMatch && columnMatch) ? '' : 'none';
+    });
+  }
+
+  // Handle Archive placeholder
+  archiveBtn.addEventListener('click', () => {
+    const count = selectedRowIndices.size;
+    if (count === 0) {
+      alert('請先勾選要歸檔的項目。');
+    } else {
+      alert(`📦 準備歸檔案件：${count} 筆\n(歸檔功能實作開發中...)`);
+    }
+  });
+
+  // Track selection state (Persistence)
+  tableBody.addEventListener('change', (e) => {
+    if (e.target.classList.contains('row-checkbox')) {
+      const idx = e.target.getAttribute('data-index');
+      if (e.target.checked) {
+        selectedRowIndices.add(idx);
+      } else {
+        selectedRowIndices.delete(idx);
+      }
+      console.log('✅ Selection updated:', selectedRowIndices.size, 'selected');
+    }
+  });
+
+  // --- CSV Logic Extensions ---
+
   function parseAndDisplay(text) {
     console.log('📄 Starting file parsing...');
     
-    // 1. Robust CSV Parsing (Handles quotes, multiline cells, and various separators)
     const allRecords = parseCSV(text);
     console.log('📊 Total raw records parsed:', allRecords.length);
     
@@ -333,81 +407,149 @@ async function init() {
       return;
     }
 
-    // 2. Extract Components based on User Rules
-    // Skip 4, use 5th as header (Index 4)
     const rawHeader = allRecords[4];
-    // Skip last 3
     const rawDataRows = allRecords.slice(5, allRecords.length - 3);
 
-    // 3. Render Header (Ensure exactly 8 columns)
+    // Render Header (8 columns + Checkbox column)
     const headerColumns = rawHeader.slice(0, 8);
     while (headerColumns.length < 8) headerColumns.push(`Col ${headerColumns.length + 1}`);
     
     tableHead.innerHTML = '';
-    headerColumns.forEach(col => {
+    headerColumns.forEach((col, idx) => {
       const th = document.createElement('th');
-      th.textContent = col || ' (無名稱) ';
+      
+      // Container for label & filter
+      const container = document.createElement('div');
+      container.className = 'column-filter-container';
+      
+      const label = document.createElement('span');
+      label.className = 'column-label';
+      label.textContent = col || `欄位 ${idx + 1}`;
+      
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.className = 'column-filter-input';
+      input.placeholder = '篩選...';
+      input.addEventListener('input', filterPreviewTable);
+      
+      container.appendChild(label);
+      container.appendChild(input);
+      th.appendChild(container);
       tableHead.appendChild(th);
     });
 
-    // 4. Stitch Fragments into Logical Transactions
-    // Rule: A new transaction starts if the 1st column is a Date (YYYY/MM/DD)
+    // Add Select header with "Select All" Checkbox
+    const thSelect = document.createElement('th');
+    thSelect.style.width = '60px';
+    thSelect.style.textAlign = 'center';
+    thSelect.style.verticalAlign = 'top';
+    
+    const selContainer = document.createElement('div');
+    selContainer.className = 'column-filter-container';
+    selContainer.style.alignItems = 'center';
+    
+    const selLabel = document.createElement('span');
+    selLabel.className = 'column-label';
+    selLabel.textContent = '選擇';
+    
+    const selectAllBox = document.createElement('input');
+    selectAllBox.type = 'checkbox';
+    selectAllBox.id = 'select-all-checkbox';
+    selectAllBox.title = '全選 (僅限目前顯示項目)';
+    
+    // Select All Logic
+    selectAllBox.addEventListener('change', (e) => {
+      const isChecked = e.target.checked;
+      const visibleCheckboxes = Array.from(tableBody.querySelectorAll('tr'))
+        .filter(tr => tr.style.display !== 'none')
+        .map(tr => tr.querySelector('.row-checkbox'));
+      
+      visibleCheckboxes.forEach(cb => {
+        cb.checked = isChecked;
+        const idx = cb.getAttribute('data-index');
+        if (isChecked) {
+          selectedRowIndices.add(idx);
+        } else {
+          selectedRowIndices.delete(idx);
+        }
+      });
+      console.log('📢 Select All updated:', selectedRowIndices.size, 'selected');
+    });
+
+    selContainer.appendChild(selLabel);
+    selContainer.appendChild(selectAllBox);
+    thSelect.appendChild(selContainer);
+    tableHead.appendChild(thSelect);
+
+    // Process transactions
     const transactions = [];
     let currentTx = null;
 
     rawDataRows.forEach((row) => {
       if (row.length === 0 || row.every(f => f === '')) return;
-
       const firstCol = row[0] || '';
       const isNewTx = /^\d{4}[\/\-]\d{1,2}[\/\-]\d{1,2}/.test(firstCol);
 
       if (isNewTx) {
-        // Start a new transaction
         currentTx = [...row];
-        // Ensure initial padding to 8 columns
         while (currentTx.length < 8) currentTx.push('');
         transactions.push(currentTx);
       } else if (currentTx) {
-        // Stitch into previous transaction
         row.forEach((field, i) => {
           if (!field) return;
-          if (i === 0) {
-            // Append Time/Date fragments to Column 1
-            currentTx[0] += ' ' + field;
-          } else if (i < 8) {
-            // Merge other fields if current is empty, or append if significant
-            if (!currentTx[i]) {
-              currentTx[i] = field;
-            } else {
-              currentTx[i] += '\n' + field;
-            }
+          if (i === 0) currentTx[0] += ' ' + field;
+          else if (i < 8) {
+            if (!currentTx[i]) currentTx[i] = field;
+            else currentTx[i] += '\n' + field;
           }
         });
       }
     });
 
-    // 5. Final Processing for each transaction (Handling thousands separators)
-    const finalRows = transactions.map(tx => {
-      // Create a clean 8-column copy
-      const row = tx.slice(0, 8);
-      while (row.length < 8) row.push('');
-      return row;
-    });
+    currentParsedRows = transactions.map(tx => tx.slice(0, 8));
+    selectedRowIndices.clear(); // Reset on new file upload
 
-    // 6. Render Body
+    // Render Body
     tableBody.innerHTML = '';
-    finalRows.forEach(rowData => {
+    currentParsedRows.forEach((rowData, idx) => {
       const tr = document.createElement('tr');
       rowData.forEach(cell => {
         const td = document.createElement('td');
         td.textContent = cell;
         tr.appendChild(td);
       });
+      
+      // Add Checkbox cell
+      const tdCheck = document.createElement('td');
+      tdCheck.style.textAlign = 'center';
+      const checkbox = document.createElement('input');
+      checkbox.type = 'checkbox';
+      checkbox.className = 'row-checkbox';
+      checkbox.setAttribute('data-index', idx);
+      checkbox.checked = selectedRowIndices.has(idx.toString());
+      tdCheck.appendChild(checkbox);
+      tr.appendChild(tdCheck);
+      
       tableBody.appendChild(tr);
     });
 
-    console.log('✅ Displayed transactions:', finalRows.length);
+    // Populate the filter datalists from allAssets
+    populatePreviewFilters();
+
+    console.log('✅ Displayed transactions:', currentParsedRows.length);
     previewSection.classList.remove('hidden');
+  }
+
+  function populatePreviewFilters() {
+    const owners = [...new Set(allAssets.map(a => a.owner).filter(Boolean))];
+    const categories = [...new Set(allAssets.map(a => a.category).filter(Boolean))];
+    const subCategories = [...new Set(allAssets.map(a => a.sub_category).filter(Boolean))];
+    const targets = [...new Set(allAssets.map(a => a.target).filter(Boolean))];
+
+    renderDatalist('owners-filter', owners);
+    renderDatalist('categories-filter', categories);
+    renderDatalist('sub-categories-filter', subCategories);
+    renderDatalist('targets-filter', targets);
   }
 
   function parseCSV(text) {
@@ -415,8 +557,6 @@ async function init() {
     let currentRecord = [];
     let currentField = '';
     let inQuotes = false;
-    
-    // Detect separator (Tab > Semicolon > Comma)
     let separator = ',';
     if (text.includes('\t')) separator = '\t';
     else if (text.includes(';')) separator = ';';
@@ -424,10 +564,9 @@ async function init() {
     for (let i = 0; i < text.length; i++) {
       const char = text[i];
       const nextChar = text[i + 1];
-
       if (char === '"') {
         if (inQuotes && nextChar === '"') {
-          currentField += '"'; // Escaped quote
+          currentField += '"';
           i++;
         } else {
           inQuotes = !inQuotes;
@@ -436,38 +575,31 @@ async function init() {
         currentRecord.push(currentField.trim());
         currentField = '';
       } else if ((char === '\r' || char === '\n') && !inQuotes) {
-        // End of line
         currentRecord.push(currentField.trim());
-        
-        // Literal row handling: always push even if empty to maintain row indices (Row 1-5, etc.)
         records.push(currentRecord);
-        
         currentRecord = [];
         currentField = '';
-        if (char === '\r' && nextChar === '\n') i++; // Skip \n in \r\n
+        if (char === '\r' && nextChar === '\n') i++;
       } else {
         currentField += char;
       }
     }
-    
-    // Last bit
     if (currentField || currentRecord.length) {
       currentRecord.push(currentField.trim());
       records.push(currentRecord);
     }
-    
-    // Cleanup: Filter out COMPLETELY empty records only at the very end if needed, 
-    // but we need them for the first 5 records to get the header correctly.
     return records;
   }
 
   // API health check
   try {
     const res = await fetch('/api/health');
-    const data = await res.json();
-    console.log('✅ API health:', data);
+    if (res.ok) {
+      const data = await res.json();
+      console.log('✅ API health:', data);
+    }
   } catch {
-    console.log('ℹ️  API not available');
+    console.log('ℹ️ API not available');
   }
 }
 

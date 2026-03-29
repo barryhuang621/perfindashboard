@@ -96,13 +96,46 @@
           <!-- Data Preview Table -->
           <section class="data-preview hidden" id="preview-section">
             <div class="preview-header">
-              <h3>Transaction Preview</h3>
-              <button id="clear-btn" class="btn-text">Clear Data</button>
+              <div class="header-left">
+                <h3>Transaction Preview</h3>
+              </div>
+              <div class="header-filters">
+                <div class="filter-group">
+                  <label for="filter-owner">擁有人</label>
+                  <input list="owners-filter" id="filter-owner" placeholder="篩選..." />
+                  <datalist id="owners-filter"></datalist>
+                </div>
+                <div class="filter-group">
+                  <label for="filter-category">類別</label>
+                  <input list="categories-filter" id="filter-category" placeholder="篩選..." />
+                  <datalist id="categories-filter"></datalist>
+                </div>
+                <div class="filter-group">
+                  <label for="filter-sub-category">子類別</label>
+                  <input list="sub-categories-filter" id="filter-sub-category" placeholder="篩選..." />
+                  <datalist id="sub-categories-filter"></datalist>
+                </div>
+                <div class="filter-group">
+                  <label for="filter-target">標的</label>
+                  <input list="targets-filter" id="filter-target" placeholder="篩選..." />
+                  <datalist id="targets-filter"></datalist>
+                </div>
+                <button id="archive-btn" class="btn-primary" style="padding: 6px 16px; font-size: 13px;">歸檔</button>
+              </div>
+              <div class="header-right">
+                <button id="clear-btn" class="btn-text">Clear Data</button>
+              </div>
             </div>
             <div class="table-frame">
               <table id="data-table">
-                <thead><tr id="table-head"></tr></thead>
-                <tbody id="table-body"></tbody>
+                <thead>
+                  <tr id="table-head">
+                    <!-- Column headers will be inserted here -->
+                  </tr>
+                </thead>
+                <tbody id="table-body">
+                  <!-- Row data will be inserted here -->
+                </tbody>
               </table>
             </div>
           </section>
