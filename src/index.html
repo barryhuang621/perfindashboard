@@ -170,6 +170,30 @@
               </div>
             </div>
           </div>
+
+          <!-- Raw Database View for Debugging -->
+          <div class="card debug-card" style="margin-top: var(--space-xl); border: 1px dashed var(--color-border);">
+            <div class="card-header" style="padding-bottom: var(--space-sm);">
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <h4 style="margin: 0; font-size: var(--font-size-base);">目前資料庫記錄</h4>
+                <button onclick="location.reload()" class="btn-text" style="font-size: var(--font-size-xs);">重整頁面</button>
+              </div>
+            </div>
+            <div class="table-frame" style="max-height: 250px; overflow-y: auto;">
+              <table id="asset-list-table" style="font-size: var(--font-size-sm);">
+                <thead>
+                  <tr>
+                    <th>類別</th>
+                    <th>子類別</th>
+                    <th>標的</th>
+                  </tr>
+                </thead>
+                <tbody id="asset-list-body">
+                  <tr><td colspan="3" style="text-align: center; color: var(--color-text-secondary);">讀取中...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
       </main>
 

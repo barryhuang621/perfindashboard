@@ -67,6 +67,7 @@ async function init() {
   // 2.5 Dynamic Datalist Logic
   async function updateFormDatalists() {
     console.log('🔄 Updating datalists from database...');
+    const listBody = document.getElementById('asset-list-body');
     const baseline = {
       categories: ['資產', '負債'],
       subCategories: ['台灣股票', '台灣基金'],
@@ -74,18 +75,17 @@ async function init() {
     };
 
     try {
-      // Use cache-busting parameter to ensure fresh data
       const res = await fetch('/api/assets?t=' + Date.now());
       const assets = await res.json();
       
       console.log('📊 Assets fetched for datalists:', assets);
 
       if (Array.isArray(assets)) {
-        const dbCategories = [...new Set(assets.map(a => a.category))];
-        const dbSubCategories = [...new Set(assets.map(a => a.sub_category))];
-        const dbTargets = [...new Set(assets.map(a => a.target))];
+        // 1. Update Datalists
+        const dbCategories = [...new Set(assets.map(a => a.category).filter(Boolean))];
+        const dbSubCategories = [...new Set(assets.map(a => a.sub_category).filter(Boolean))];
+        const dbTargets = [...new Set(assets.map(a => a.target).filter(Boolean))];
 
-        // Merge and deduplicate
         const categories = [...new Set([...baseline.categories, ...dbCategories])];
         const subCategories = [...new Set([...baseline.subCategories, ...dbSubCategories])];
         const targets = [...new Set([...baseline.targets, ...dbTargets])];
@@ -93,11 +93,26 @@ async function init() {
         renderDatalist('categories', categories);
         renderDatalist('sub-categories', subCategories);
         renderDatalist('targets', targets);
-        console.log('✅ Datalists updated successfully');
+
+        // 2. Update Debug Table
+        if (listBody) {
+          if (assets.length === 0) {
+            listBody.innerHTML = '<tr><td colspan="3" style="text-align: center;">資料庫為空</td></tr>';
+          } else {
+            listBody.innerHTML = assets.map(a => `
+              <tr>
+                <td>${a.category || '-'}</td>
+                <td>${a.sub_category || '-'}</td>
+                <td>${a.target || '-'}</td>
+              </tr>
+            `).join('');
+          }
+        }
+        console.log('✅ Datalists and debug table updated successfully');
       }
     } catch (err) {
-      console.error('❌ Failed to fetch assets for datalists:', err);
-      // Fallback to baseline
+      console.error('❌ Failed to fetch assets:', err);
+      if (listBody) listBody.innerHTML = `<tr><td colspan="3" style="color: red; text-align: center;">讀取失敗: ${err.message}</td></tr>`;
       renderDatalist('categories', baseline.categories);
       renderDatalist('sub-categories', baseline.subCategories);
       renderDatalist('targets', baseline.targets);

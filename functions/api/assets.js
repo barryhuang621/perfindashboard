@@ -47,7 +47,12 @@ export async function onRequestGet(context) {
     ).all();
 
     return new Response(JSON.stringify(results), {
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 
+        'Content-Type': 'application/json',
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+      },
     });
   } catch (err) {
     return new Response(JSON.stringify({ error: err.message }), {
