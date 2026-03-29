@@ -4,13 +4,16 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "wrangler pages dev dist --port 5173 --proxy 5174",
+    "dev": "concurrently \"npm run vite\" \"npm run wrangler\"",
     "vite": "vite --host --port 5174",
+    "wrangler": "wrangler pages dev --port 5173 --proxy 5174",
     "build": "vite build",
     "preview": "vite preview",
-    "deploy": "npm run build && wrangler pages deploy dist"
+    "deploy": "npm run build && wrangler pages deploy dist",
+    "db:init": "wrangler d1 execute perfin-db --local --file=db/schema.sql"
   },
   "devDependencies": {
+    "concurrently": "^9.2.1",
     "vite": "^6.2.0",
     "wrangler": "^3.109.0"
   }
