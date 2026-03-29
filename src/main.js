@@ -66,6 +66,7 @@ async function init() {
 
   // 2.5 Dynamic Datalist Logic
   async function updateFormDatalists() {
+    console.log('🔄 Updating datalists from database...');
     const baseline = {
       categories: ['資產', '負債'],
       subCategories: ['台灣股票', '台灣基金'],
@@ -73,9 +74,12 @@ async function init() {
     };
 
     try {
-      const res = await fetch('/api/assets');
+      // Use cache-busting parameter to ensure fresh data
+      const res = await fetch('/api/assets?t=' + Date.now());
       const assets = await res.json();
       
+      console.log('📊 Assets fetched for datalists:', assets);
+
       if (Array.isArray(assets)) {
         const dbCategories = [...new Set(assets.map(a => a.category))];
         const dbSubCategories = [...new Set(assets.map(a => a.sub_category))];
@@ -89,6 +93,7 @@ async function init() {
         renderDatalist('categories', categories);
         renderDatalist('sub-categories', subCategories);
         renderDatalist('targets', targets);
+        console.log('✅ Datalists updated successfully');
       }
     } catch (err) {
       console.error('❌ Failed to fetch assets for datalists:', err);
@@ -103,9 +108,13 @@ async function init() {
     const datalist = document.getElementById(id);
     if (!datalist) return;
     datalist.innerHTML = options
+      .filter(opt => opt) // Filter out null/empty
       .map(opt => `<option value="${opt}">`)
       .join('');
   }
+
+  // Populate datalists on initial load
+  updateFormDatalists();
 
   // 3. Asset Submission Logic
   addAssetBtn.addEventListener('click', async () => {
@@ -135,10 +144,11 @@ async function init() {
       if (result.success) {
         if (result.changes > 0) {
           alert('✅ 項目已成功加入！');
+          // Refresh datalists to include the new item
+          updateFormDatalists();
         } else {
           alert('ℹ️ 項目已存在，未重複加入。');
         }
-        // Optional: Reset form or switch back to home
       } else {
         alert('❌ 發生錯誤：' + result.error);
       }
