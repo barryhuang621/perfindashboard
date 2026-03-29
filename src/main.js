@@ -123,32 +123,25 @@ async function init() {
   }
 
   function renderDatalist(id, options) {
-    const datalist = document.getElementById(id);
-    if (!datalist) return;
+    const oldDatalist = document.getElementById(id);
+    if (!oldDatalist) return;
     
-    // Robust approach: Clear all children first
-    while (datalist.firstChild) {
-      datalist.removeChild(datalist.firstChild);
-    }
+    // 1. Create a brand new datalist element
+    const newDatalist = document.createElement('datalist');
+    newDatalist.id = id;
     
-    // Create new option elements
-    options
-      .filter(opt => opt)
-      .forEach(opt => {
-        const option = document.createElement('option');
-        option.value = opt;
-        datalist.appendChild(option);
-      });
-      
-    console.log(`📡 Datalist [${id}] updated with ${options.length} options`);
+    // 2. Add options
+    const uniqueOptions = [...new Set(options.filter(opt => opt))];
+    uniqueOptions.forEach(opt => {
+      const option = document.createElement('option');
+      option.value = opt;
+      newDatalist.appendChild(option);
+    });
     
-    // Force re-bind to the input to trigger browser refresh
-    const input = document.querySelector(`input[list="${id}"]`);
-    if (input) {
-      const currentListAttr = input.getAttribute('list');
-      input.setAttribute('list', '');
-      setTimeout(() => input.setAttribute('list', currentListAttr), 10);
-    }
+    // 3. Replace the old one in the DOM to break browser cache
+    oldDatalist.parentNode.replaceChild(newDatalist, oldDatalist);
+    
+    console.log(`📡 Datalist [${id}] RECONSTRUCTED with ${uniqueOptions.length} items:`, uniqueOptions);
   }
 
   /**
