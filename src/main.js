@@ -308,7 +308,7 @@ async function init() {
 
   // Clear button functionality
   clearBtn.addEventListener('click', () => {
-    previewSection.classList.add('hidden');
+    if (previewSection) previewSection.classList.add('hidden');
     fileInfo.classList.add('hidden');
     tableHead.innerHTML = '';
     tableBody.innerHTML = '';
@@ -333,32 +333,15 @@ async function init() {
     reader.readAsText(file);
   }
 
-  // Trigger filtering when filters change
-  [filterOwn, filterCat, filterSub, filterTgt].forEach(f => {
-    f.addEventListener('input', () => filterPreviewTable());
-  });
-
   function filterPreviewTable() {
-    // 1. Global Filters
-    const globalFilters = [
-      filterOwn.value.toLowerCase().trim(),
-      filterCat.value.toLowerCase().trim(),
-      filterSub.value.toLowerCase().trim(),
-      filterTgt.value.toLowerCase().trim()
-    ].filter(Boolean);
-
-    // 2. Column-specific Filters
+    // 1. Column-specific Filters (The ONLY filters now)
     const colFilterInputs = Array.from(tableHead.querySelectorAll('.column-filter-input'));
     const colFilters = colFilterInputs.map(input => input.value.toLowerCase().trim());
 
     const rows = Array.from(tableBody.querySelectorAll('tr'));
     
     rows.forEach(row => {
-      const rowText = row.textContent.toLowerCase();
       const cells = Array.from(row.querySelectorAll('td'));
-      
-      // Global Match (Must match ALL active global filters anywhere in the row)
-      const globalMatch = globalFilters.every(f => rowText.includes(f));
       
       // Column Match (Must match each filled column filter against its respective cell)
       const columnMatch = colFilters.every((f, i) => {
@@ -367,19 +350,46 @@ async function init() {
         return cellText.includes(f);
       });
 
-      row.style.display = (globalMatch && columnMatch) ? '' : 'none';
+      row.style.display = columnMatch ? '' : 'none';
     });
+
+    // Update Select-All checkbox state after filtering
+    syncSelectAllState();
+  }
+
+  function syncSelectAllState() {
+    const selectAllBox = document.getElementById('select-all-checkbox');
+    if (selectAllBox) {
+      const allVisible = Array.from(tableBody.querySelectorAll('tr'))
+        .filter(tr => tr.style.display !== 'none')
+        .map(tr => tr.querySelector('.row-checkbox'));
+      
+      const allChecked = allVisible.length > 0 && allVisible.every(cb => cb.checked);
+      const someChecked = allVisible.some(cb => cb.checked);
+      
+      selectAllBox.checked = allVisible.length > 0 && allChecked;
+      selectAllBox.indeterminate = someChecked && !allChecked;
+    }
   }
 
   // Handle Archive placeholder
-  archiveBtn.addEventListener('click', () => {
-    const count = selectedRowIndices.size;
-    if (count === 0) {
-      alert('請先勾選要歸檔的項目。');
-    } else {
-      alert(`📦 準備歸檔案件：${count} 筆\n(歸檔功能實作開發中...)`);
-    }
-  });
+  if (archiveBtn) {
+    archiveBtn.addEventListener('click', () => {
+      const count = selectedRowIndices.size;
+      const assignment = {
+        owner: filterOwn.value.trim(),
+        category: filterCat.value.trim(),
+        subCategory: filterSub.value.trim(),
+        target: filterTgt.value.trim()
+      };
+
+      if (count === 0) {
+        alert('請先勾選要歸檔的項目。');
+      } else {
+        alert(`📦 準備歸檔案件：${count} 筆\n分配目標：${assignment.owner || '未指定'} / ${assignment.category || '未指定'}\n(歸檔動作開發中...)`);
+      }
+    });
+  }
 
   // Track selection state (Persistence)
   tableBody.addEventListener('change', (e) => {
