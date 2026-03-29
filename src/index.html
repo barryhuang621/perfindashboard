@@ -23,7 +23,7 @@
             <line x1="3" y1="18" x2="21" y2="18"></line>
           </svg>
         </button>
-        <span class="sidebar-title">選單</span>
+        <span class="sidebar-title">功能選單</span>
       </div>
       <nav class="sidebar-nav">
         <button class="nav-item active" data-view="home">
@@ -32,68 +32,81 @@
         </button>
         <button class="nav-item" data-view="add-item">
           <span class="icon">➕</span>
-          <span class="label">新增項目</span>
+          <span class="label">設定項目</span>
+        </button>
+        <button class="nav-item" data-view="records">
+          <span class="icon">📜</span>
+          <span class="label">資產紀錄</span>
         </button>
       </nav>
+      <div class="sidebar-footer">
+        <button class="nav-item" data-view="settings">
+          <span class="icon">⚙️</span>
+          <span class="label">系統設定</span>
+        </button>
+      </div>
     </aside>
 
-    <div class="dashboard-container">
-      <!-- Header -->
-      <header class="header">
-        <div class="header-glow"></div>
-        <div class="logo-section">
-          <div class="logo-icon">
-            <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <rect width="32" height="32" rx="8" fill="url(#logo-gradient)"/>
-              <path d="M16 6L22 10V14L16 18L10 14V10L16 6Z" fill="white" fill-opacity="0.9"/>
-              <path d="M10 18L16 22L22 18V22L16 26L10 22V18Z" fill="white" fill-opacity="0.6"/>
-              <defs>
-                <linearGradient id="logo-gradient" x1="0" y1="0" x2="32" y2="32">
-                  <stop stop-color="#6366F1"/>
-                  <stop offset="1" stop-color="#8B5CF6"/>
-                </linearGradient>
-              </defs>
-            </svg>
+    <!-- Main Content Area -->
+    <main class="dashboard-container">
+      
+      <!-- 1. Home View -->
+      <section id="home-view" class="view">
+        <header class="header">
+          <div class="header-glow"></div>
+          <div class="logo-section">
+            <div class="logo-icon">📊</div>
+            <h1 class="title">Personal Finance Dashboard</h1>
           </div>
-          <h1 class="title">Personal Finance Dashboard</h1>
+          <p class="subtitle">追蹤您的財富，掌握您的未來</p>
+        </header>
+
+        <!-- Stats Overview -->
+        <div class="stats-grid">
+          <div class="card stat-card">
+            <div class="stat-label">總資產</div>
+            <div class="stat-value">$1,280,450</div>
+            <div class="stat-hint">較上月 +2.4%</div>
+          </div>
+          <div class="card stat-card">
+            <div class="stat-label">本月支出</div>
+            <div class="stat-value">$42,300</div>
+            <div class="stat-hint">剩餘預算 $15,700</div>
+          </div>
+          <div class="card stat-card">
+            <div class="stat-label">投資收益</div>
+            <div class="stat-value">+$8,450</div>
+            <div class="stat-hint">年化報酬 7.8%</div>
+          </div>
+          <div class="card stat-card">
+            <div class="stat-label">儲蓄率</div>
+            <div class="stat-value">32%</div>
+            <div class="stat-hint">目標 35%</div>
+          </div>
         </div>
-      </header>
 
-      <!-- Main Content Wrapper -->
-      <main class="main-content">
-        <!-- Home View -->
-        <div id="home-view">
-          <div class="card card-welcome">
-            <div class="card-shimmer"></div>
-            <div class="card-icon">👋</div>
-            <h2>Welcome</h2>
-            <p>Your personal finance dashboard is ready. Start tracking your income, expenses, and investments.</p>
-          </div>
-
-          <div class="stats-grid">
-            <div class="card stat-card">
-              <div class="stat-label">Balance</div>
-              <div class="stat-value">—</div>
-              <div class="stat-hint">Coming soon</div>
+        <!-- Upload Section -->
+        <div class="upload-section">
+          <div class="card upload-card" id="dropzone">
+            <div class="upload-header">
+              <h3>匯入帳務資料</h3>
+              <p>支援標準 CSV 與文字格式，將檔案拖放至此或點擊上傳</p>
             </div>
-            <div class="card stat-card">
-              <div class="stat-label">Income</div>
-              <div class="stat-value">—</div>
-              <div class="stat-hint">Coming soon</div>
+            <div class="upload-dropzone">
+              <div class="dropzone-content">
+                <div class="icon">📁</div>
+                <p>點擊或拖放檔案</p>
+                <input type="file" id="file-input" class="hidden" accept=".csv,.txt" />
+                <span class="file-hint">目前支援：中文化銀行對帳單 (格式 A)</span>
+              </div>
             </div>
-            <div class="card stat-card">
-              <div class="stat-label">Expenses</div>
-              <div class="stat-value">—</div>
-              <div class="stat-hint">Coming soon</div>
-            </div>
-            <div class="card stat-card">
-              <div class="stat-label">Savings</div>
-              <div class="stat-value">—</div>
-              <div class="stat-hint">Coming soon</div>
+            <div id="file-info" class="file-info hidden">
+              <span class="account-badge" id="account-name">玉山銀行</span>
+              <span class="file-name" id="selected-file-name">statement.csv</span>
             </div>
           </div>
 
-          <!-- Data Preview Table -->
+          <!-- Transaction Preview Table -->
           <section class="data-preview hidden" id="preview-section">
             <div class="preview-header">
               <div class="header-left">
@@ -101,22 +114,22 @@
               </div>
               <div class="header-filters">
                 <div class="filter-group">
-                  <label for="filter-owner">擁有人</label>
+                  <label>擁有人</label>
                   <input list="owners-filter" id="filter-owner" placeholder="選擇..." />
                   <datalist id="owners-filter"></datalist>
                 </div>
                 <div class="filter-group">
-                  <label for="filter-category">類別</label>
+                  <label>類別</label>
                   <input list="categories-filter" id="filter-category" placeholder="選擇..." />
                   <datalist id="categories-filter"></datalist>
                 </div>
                 <div class="filter-group">
-                  <label for="filter-sub-category">子類別</label>
+                  <label>子類別</label>
                   <input list="sub-categories-filter" id="filter-sub-category" placeholder="選擇..." />
                   <datalist id="sub-categories-filter"></datalist>
                 </div>
                 <div class="filter-group">
-                  <label for="filter-target">標的</label>
+                  <label>標的</label>
                   <input list="targets-filter" id="filter-target" placeholder="選擇..." />
                   <datalist id="targets-filter"></datalist>
                 </div>
@@ -128,88 +141,51 @@
             </div>
             <div class="table-frame">
               <table id="data-table">
-                <thead>
-                  <tr id="table-head">
-                    <!-- Column headers will be inserted here -->
-                  </tr>
-                </thead>
-                <tbody id="table-body">
-                  <!-- Row data will be inserted here -->
-                </tbody>
+                <thead><tr id="table-head"></tr></thead>
+                <tbody id="table-body"></tbody>
               </table>
             </div>
           </section>
-
-          <section class="upload-section">
-            <div class="card upload-card">
-              <div class="upload-header">
-                <h3>Upload Transactions</h3>
-                <p>Upload your CSV or Text files to parse records</p>
-              </div>
-              <div class="upload-dropzone" id="dropzone">
-                <input type="file" id="file-input" accept=".csv,.txt" hidden />
-                <div class="dropzone-content">
-                  <div class="icon">📁</div>
-                  <p>Click to browse or drag and drop your file here</p>
-                  <span class="file-hint">Supported formats: .csv, .txt</span>
-                </div>
-              </div>
-              <div id="file-info" class="file-info hidden">
-                <span class="account-badge" id="account-name"></span>
-                <span class="file-name" id="selected-file-name"></span>
-              </div>
-            </div>
-          </section>
         </div>
+      </section>
 
-        <!-- Add Item View -->
-        <div id="add-item-view" class="hidden">
-          <div class="card add-item-card">
-            <div class="card-header">
-              <h3>新增項目</h3>
-              <p>輸入新的資產、負債或交易記錄</p>
+      <!-- 2. Add Item View -->
+      <section id="add-item-view" class="view hidden">
+        <div class="card add-item-card">
+          <div class="card-header">
+            <h3>新增資產類別</h3>
+            <p>定義您的財富組合，建立後即可在首頁進行歸檔</p>
+          </div>
+          <div class="form-container">
+            <div class="form-group">
+              <label for="asset-owner">擁有人</label>
+              <input list="owners" id="asset-owner" placeholder="選擇或輸入擁有人" />
+              <datalist id="owners"></datalist>
             </div>
-            <div class="form-container">
-              <div class="form-group">
-                <label for="asset-owner">擁有人</label>
-                <input list="owners" id="asset-owner" placeholder="選擇或輸入擁有人" />
-                <datalist id="owners"></datalist>
-              </div>
-
-              <div class="form-group">
-                <label for="asset-category">資產類別</label>
-                <input list="categories" id="asset-category" placeholder="選擇或輸入類別" />
-                <datalist id="categories"></datalist>
-              </div>
-
-              <div class="form-group">
-                <label for="sub-category">子類別</label>
-                <input list="sub-categories" id="sub-category" placeholder="選擇或輸入子類別" />
-                <datalist id="sub-categories"></datalist>
-              </div>
-
-              <div class="form-group">
-                <label for="asset-target">標的</label>
-                <input list="targets" id="asset-target" placeholder="選擇或輸入標的" />
-                <datalist id="targets"></datalist>
-              </div>
-
-              <div class="form-actions">
-                <button id="add-asset-btn" class="btn-primary">加入</button>
-              </div>
+            <div class="form-group">
+              <label for="asset-category">資產類別</label>
+              <input list="categories" id="asset-category" placeholder="選擇或輸入類別" />
+              <datalist id="categories"></datalist>
+            </div>
+            <div class="form-group">
+              <label for="sub-category">子類別</label>
+              <input list="sub-categories" id="sub-category" placeholder="選擇或輸入子類別" />
+              <datalist id="sub-categories"></datalist>
+            </div>
+            <div class="form-group">
+              <label for="asset-target">標的</label>
+              <input list="targets" id="asset-target" placeholder="選擇或輸入標的" />
+              <datalist id="targets"></datalist>
+            </div>
+            <div class="form-actions">
+              <button id="add-asset-btn" class="btn-primary">加入</button>
             </div>
           </div>
 
-          <!-- Raw Database View for Debugging -->
-          <div class="card debug-card" style="margin-top: var(--space-xl); border: 1px dashed var(--color-border);">
-            <div class="card-header" style="padding-bottom: var(--space-sm);">
-              <div style="display: flex; justify-content: space-between; align-items: center;">
-                <h4 style="margin: 0; font-size: var(--font-size-base);">目前資料庫記錄</h4>
-                <button onclick="location.reload()" class="btn-text" style="font-size: var(--font-size-xs);">重整頁面</button>
-              </div>
-            </div>
-            <div class="table-frame" style="max-height: 250px; overflow-y: auto;">
-              <table id="asset-list-table" style="font-size: var(--font-size-sm);">
+          <div class="database-status" style="margin-top: 40px;">
+            <div class="preview-header"><h3>資產結構總覽</h3></div>
+            <div class="table-frame">
+              <table id="asset-list-table">
                 <thead>
                   <tr>
                     <th>擁有人</th>
@@ -219,20 +195,40 @@
                     <th style="width: 80px;">操作</th>
                   </tr>
                 </thead>
-                <tbody id="asset-list-body">
-                  <tr><td colspan="5" style="text-align: center; color: var(--color-text-secondary);">讀取中...</td></tr>
-                </tbody>
+                <tbody id="asset-list-body"></tbody>
               </table>
             </div>
           </div>
         </div>
-      </main>
+      </section>
 
-      <!-- Footer -->
-      <footer class="footer">
-        <p>PerFin Dashboard &copy; 2026 &mdash; Powered by Cloudflare</p>
-      </footer>
-    </div>
+      <!-- 3. Asset Records View -->
+      <section id="records-view" class="view hidden">
+        <div class="records-header" style="margin-bottom: var(--space-lg); display: flex; justify-content: space-between; align-items: flex-end;">
+          <div>
+            <h2 style="font-size: var(--font-size-xl); margin-bottom: 4px;">📜 資產紀錄</h2>
+            <p style="color: var(--color-text-secondary); font-size: var(--font-size-sm);">管理所有已歸檔的歷史交易與資產變動</p>
+          </div>
+          <button id="refresh-records-btn" class="btn-primary" style="width: auto; padding: 10px 20px;">重新整理</button>
+        </div>
+
+        <div class="card" style="padding: 0; overflow: hidden;">
+          <div class="table-frame" style="border: none; max-height: 70vh; overflow: auto; background: var(--color-surface);">
+            <table id="history-table">
+              <thead>
+                <tr id="history-head">
+                  <!-- Generated headers with filters -->
+                </tr>
+              </thead>
+              <tbody id="history-body">
+                <tr><td colspan="13" style="text-align: center; padding: 40px; color: var(--color-text-muted);">讀取中...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+    </main>
   </div>
   <script type="module" src="./main.js"></script>
 </body>

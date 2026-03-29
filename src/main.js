@@ -45,6 +45,7 @@ async function init() {
   });
 
   // 2. View Switching Logic
+  const views = ['home', 'add-item', 'records'];
   navItems.forEach(item => {
     item.addEventListener('click', () => {
       const view = item.getAttribute('data-view');
@@ -54,14 +55,22 @@ async function init() {
       item.classList.add('active');
 
       // Switch View
-      if (view === 'home') {
-        homeView.classList.remove('hidden');
-        addItemView.classList.add('hidden');
-      } else if (view === 'add-item') {
-        homeView.classList.add('hidden');
-        addItemView.classList.remove('hidden');
-        // Update datalists when entering Add Item view
+      views.forEach(v => {
+        const el = document.getElementById(`${v}-view`);
+        if (el) {
+          if (v === view) {
+            el.classList.remove('hidden');
+          } else {
+            el.classList.add('hidden');
+          }
+        }
+      });
+
+      // Special View Initializations
+      if (view === 'add-item') {
         updateFormDatalists();
+      } else if (view === 'records') {
+        fetchHistoricalRecords();
       }
 
       // Close sidebar on mobile after selection
@@ -71,6 +80,175 @@ async function init() {
     });
   });
 
+  // --- 4. Historical Records View Logic ---
+  const historyHead = document.getElementById('history-head');
+  const historyBody = document.getElementById('history-body');
+  const refreshRecordsBtn = document.getElementById('refresh-records-btn');
+
+  if (refreshRecordsBtn) {
+    refreshRecordsBtn.addEventListener('click', fetchHistoricalRecords);
+  }
+
+  async function fetchHistoricalRecords() {
+    console.log('🔄 Fetching historical records...');
+    try {
+      const res = await fetch('/api/records?t=' + Date.now());
+      const records = await res.json();
+      renderHistoricalRecords(records);
+    } catch (err) {
+      console.error('❌ Failed to fetch records:', err);
+      historyBody.innerHTML = '<tr><td colspan="13" style="text-align: center; color: var(--color-red);">讀取失敗</td></tr>';
+    }
+  }
+
+  function renderHistoricalRecords(records) {
+    if (!historyHead || !historyBody) return;
+
+    // 1. Generate Headers with Filters (if not already done)
+    if (historyHead.innerHTML === '') {
+      const columns = [
+        { key: 'owner', label: '擁有人' },
+        { key: 'category', label: '類別' },
+        { key: 'sub_category', label: '子類別' },
+        { key: 'target', label: '標的' },
+        { key: 'transaction_date', label: '交易日期' },
+        { key: 'account_date', label: '記帳日期' },
+        { key: 'info', label: '摘要' },
+        { key: 'withdraw', label: '支出' },
+        { key: 'deposit', label: '收入' },
+        { key: 'balance', label: '結餘' },
+        { key: 'transaction_info', label: '交易詳情' },
+        { key: 'remark', label: '備註' }
+      ];
+
+      columns.forEach(col => {
+        const th = document.createElement('th');
+        const container = document.createElement('div');
+        container.className = 'column-filter-container';
+        
+        const label = document.createElement('span');
+        label.className = 'column-label';
+        label.textContent = col.label;
+        
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.className = 'column-filter-input history-filter';
+        input.placeholder = '篩選...';
+        input.addEventListener('input', () => filterTable('history-table', 'history-body', '.history-filter'));
+        
+        container.appendChild(label);
+        container.appendChild(input);
+        th.appendChild(container);
+        historyHead.appendChild(th);
+      });
+
+      // Actions Column
+      const thActions = document.createElement('th');
+      thActions.style.width = '80px';
+      thActions.innerHTML = '<span class="column-label">操作</span>';
+      historyHead.appendChild(thActions);
+    }
+
+    // 2. Render Rows
+    if (records.length === 0) {
+      historyBody.innerHTML = '<tr><td colspan="13" style="text-align: center; color: var(--color-text-muted); padding: 40px;">尚未有歸檔紀錄</td></tr>';
+      return;
+    }
+
+    historyBody.innerHTML = records.map(r => `
+      <tr data-id="${r.id}">
+        <td contenteditable="true" data-field="owner">${r.owner || ''}</td>
+        <td contenteditable="true" data-field="category">${r.category || ''}</td>
+        <td contenteditable="true" data-field="sub_category">${r.sub_category || ''}</td>
+        <td contenteditable="true" data-field="target">${r.target || ''}</td>
+        <td contenteditable="true" data-field="transaction_date">${r.transaction_date || ''}</td>
+        <td contenteditable="true" data-field="account_date">${r.account_date || ''}</td>
+        <td contenteditable="true" data-field="info">${r.info || ''}</td>
+        <td contenteditable="true" data-field="withdraw">${r.withdraw || '0'}</td>
+        <td contenteditable="true" data-field="deposit">${r.deposit || '0'}</td>
+        <td contenteditable="true" data-field="balance">${r.balance || '0'}</td>
+        <td contenteditable="true" data-field="transaction_info">${r.transaction_info || ''}</td>
+        <td contenteditable="true" data-field="remark">${r.remark || ''}</td>
+        <td style="text-align: center;">
+          <button class="delete-record-btn btn-text" style="color: #ef4444; padding: 4px;">刪除</button>
+        </td>
+      </tr>
+    `).join('');
+
+    console.log('✅ Rendered', records.length, 'historical records');
+  }
+
+  // Unified Filter Function
+  function filterTable(tableId, bodyId, filterClass) {
+    const tableBody = document.getElementById(bodyId);
+    const filterInputs = Array.from(document.querySelectorAll(filterClass));
+    const filters = filterInputs.map(input => input.value.toLowerCase().trim());
+    
+    const rows = Array.from(tableBody.querySelectorAll('tr'));
+    rows.forEach(row => {
+      const cells = Array.from(row.querySelectorAll('td'));
+      const isMatch = filters.every((f, i) => {
+        if (!f) return true;
+        const cellText = (cells[i]?.textContent || '').toLowerCase();
+        return cellText.includes(f);
+      });
+      row.style.display = isMatch ? '' : 'none';
+    });
+  }
+
+  // Event Delegation for Records Table actions
+  if (historyBody) {
+    // 1. Delete
+    historyBody.addEventListener('click', async (e) => {
+      if (e.target.classList.contains('delete-record-btn')) {
+        const tr = e.target.closest('tr');
+        const id = tr.getAttribute('data-id');
+        if (!confirm('確定要永久刪除這筆紀錄嗎？')) return;
+
+        try {
+          const res = await fetch(`/api/records?id=${id}`, { method: 'DELETE' });
+          const result = await res.json();
+          if (result.success) {
+            tr.remove();
+          } else {
+            alert('刪除失敗');
+          }
+        } catch (err) {
+          alert('錯誤: ' + err.message);
+        }
+      }
+    });
+
+    // 2. Edit (Blur event for contenteditable)
+    historyBody.addEventListener('focusout', async (e) => {
+      if (e.target.hasAttribute('contenteditable')) {
+        const tr = e.target.closest('tr');
+        const id = tr.getAttribute('data-id');
+        const field = e.target.getAttribute('data-field');
+        const value = e.target.textContent.trim();
+
+        try {
+          const res = await fetch('/api/records', {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id, field, value })
+          });
+          const result = await res.json();
+          if (result.success) {
+            console.log('✅ Field updated:', field, '=', value);
+            e.target.style.backgroundColor = 'rgba(52, 211, 153, 0.1)';
+            setTimeout(() => e.target.style.backgroundColor = '', 1000);
+          }
+        } catch (err) {
+          console.error('❌ Update failed:', err);
+          e.target.style.backgroundColor = 'rgba(248, 113, 113, 0.1)';
+        }
+      }
+    });
+  }
+
+  // --- Original Logic Extensions & Helpers ---
+  // (API health, handleFiles, populatePreviewFilters, etc.)
 
   let allAssets = []; // Global cache for filtering
 
