@@ -372,9 +372,9 @@ async function init() {
     }
   }
 
-  // Handle Archive placeholder
+  // Handle Archive functionality
   if (archiveBtn) {
-    archiveBtn.addEventListener('click', () => {
+    archiveBtn.addEventListener('click', async () => {
       const count = selectedRowIndices.size;
       const assignment = {
         owner: filterOwn.value.trim(),
@@ -383,10 +383,79 @@ async function init() {
         target: filterTgt.value.trim()
       };
 
+      // 1. Validations
       if (count === 0) {
-        alert('請先勾選要歸檔的項目。');
-      } else {
-        alert(`📦 準備歸檔案件：${count} 筆\n分配目標：${assignment.owner || '未指定'} / ${assignment.category || '未指定'}\n(歸檔動作開發中...)`);
+        alert('❌ 請先從預覽表格中勾選要歸檔的交易項目。');
+        return;
+      }
+      if (!assignment.owner || !assignment.category || !assignment.subCategory || !assignment.target) {
+        alert('⚠️ 歸檔失敗：請確保在最上方的「擁有人、類別、子類別、標的」選單中皆已填入資訊。');
+        return;
+      }
+
+      const confirmed = confirm(`📦 確定要將勾選的 ${count} 筆資料歸檔至「${assignment.target}」嗎？`);
+      if (!confirmed) return;
+
+      // 2. Prepare Data for Archive
+      const transactionsToArchive = Array.from(selectedRowIndices).map(idx => {
+        const rowData = currentParsedRows[parseInt(idx)];
+        return {
+          owner: assignment.owner,
+          category: assignment.category,
+          sub_category: assignment.subCategory,
+          target: assignment.target,
+          transaction_date: rowData[0] || '',
+          account_date: rowData[1] || '',
+          info: rowData[2] || '',
+          withdraw: rowData[3] || '0',
+          deposit: rowData[4] || '0',
+          balance: rowData[5] || '0',
+          transaction_info: rowData[6] || '',
+          remark: rowData[7] || ''
+        };
+      });
+
+      // 3. Send to API
+      try {
+        archiveBtn.disabled = true;
+        archiveBtn.textContent = '歸檔中...';
+
+        const res = await fetch('/api/archive', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ transactions: transactionsToArchive })
+        });
+        
+        const result = await res.json();
+        
+        if (result.success) {
+          alert(`✅ 成功歸檔！\n總共處理: ${result.total} 筆\n實際新增: ${result.changes} 筆 (略過重複項目)`);
+          
+          // 4. Cleanup UI 
+          // Hide archived rows and clear selection
+          const rowsInDOM = Array.from(tableBody.querySelectorAll('tr'));
+          Array.from(selectedRowIndices).forEach(idxString => {
+            const idx = parseInt(idxString);
+            const tr = rowsInDOM.find(tr => tr.querySelector('.row-checkbox').getAttribute('data-index') === idxString);
+            if (tr) {
+              tr.style.opacity = '0.3';
+              tr.style.pointerEvents = 'none';
+              tr.querySelector('.row-checkbox').checked = false;
+              tr.querySelector('.row-checkbox').disabled = true;
+            }
+          });
+          selectedRowIndices.clear();
+          syncSelectAllState();
+
+        } else {
+          alert('❌ 歸檔失敗：' + (result.error || '不明錯誤'));
+        }
+      } catch (err) {
+        alert('❌ 網路異常，無法完成歸檔作業。');
+        console.error('Archive failed:', err);
+      } finally {
+        archiveBtn.disabled = false;
+        archiveBtn.textContent = '歸檔';
       }
     });
   }
