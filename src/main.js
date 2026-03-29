@@ -53,6 +53,8 @@ async function init() {
       } else if (view === 'add-item') {
         homeView.classList.add('hidden');
         addItemView.classList.remove('hidden');
+        // Update datalists when entering Add Item view
+        updateFormDatalists();
       }
 
       // Close sidebar on mobile after selection
@@ -61,6 +63,49 @@ async function init() {
       }
     });
   });
+
+  // 2.5 Dynamic Datalist Logic
+  async function updateFormDatalists() {
+    const baseline = {
+      categories: ['資產', '負債'],
+      subCategories: ['台灣股票', '台灣基金'],
+      targets: ['00772B', '00773B', '00937B']
+    };
+
+    try {
+      const res = await fetch('/api/assets');
+      const assets = await res.json();
+      
+      if (Array.isArray(assets)) {
+        const dbCategories = [...new Set(assets.map(a => a.category))];
+        const dbSubCategories = [...new Set(assets.map(a => a.sub_category))];
+        const dbTargets = [...new Set(assets.map(a => a.target))];
+
+        // Merge and deduplicate
+        const categories = [...new Set([...baseline.categories, ...dbCategories])];
+        const subCategories = [...new Set([...baseline.subCategories, ...dbSubCategories])];
+        const targets = [...new Set([...baseline.targets, ...dbTargets])];
+
+        renderDatalist('categories', categories);
+        renderDatalist('sub-categories', subCategories);
+        renderDatalist('targets', targets);
+      }
+    } catch (err) {
+      console.error('❌ Failed to fetch assets for datalists:', err);
+      // Fallback to baseline
+      renderDatalist('categories', baseline.categories);
+      renderDatalist('sub-categories', baseline.subCategories);
+      renderDatalist('targets', baseline.targets);
+    }
+  }
+
+  function renderDatalist(id, options) {
+    const datalist = document.getElementById(id);
+    if (!datalist) return;
+    datalist.innerHTML = options
+      .map(opt => `<option value="${opt}">`)
+      .join('');
+  }
 
   // 3. Asset Submission Logic
   addAssetBtn.addEventListener('click', async () => {
