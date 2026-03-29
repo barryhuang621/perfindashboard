@@ -5,7 +5,7 @@
 export async function onRequestPost(context) {
   try {
     const data = await context.request.json();
-    const { category, subCategory, target, action, id } = data;
+    const { category, subCategory, target, owner, action, id } = data;
 
     // Handle Deletion via POST (Proxy-safe)
     if (action === 'delete' && id) {
@@ -26,7 +26,7 @@ export async function onRequestPost(context) {
     }
 
     // Handle Creation
-    if (!category || !subCategory || !target) {
+    if (!category || !subCategory || !target || !owner) {
       return new Response(JSON.stringify({ error: 'Missing required fields' }), {
         status: 400,
         headers: { 'Content-Type': 'application/json' },
@@ -34,10 +34,10 @@ export async function onRequestPost(context) {
     }
 
     const statement = context.env.DB.prepare(
-      'INSERT OR IGNORE INTO asset_record (category, sub_category, target) VALUES (?, ?, ?)'
+      'INSERT OR IGNORE INTO asset_record (category, sub_category, target, owner) VALUES (?, ?, ?, ?)'
     );
     
-    const result = await statement.bind(category, subCategory, target).run();
+    const result = await statement.bind(category, subCategory, target, owner).run();
 
     return new Response(JSON.stringify({ 
       success: true, 

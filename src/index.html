@@ -138,6 +138,12 @@
             </div>
             <div class="form-container">
               <div class="form-group">
+                <label for="asset-owner">擁有人</label>
+                <input list="owners" id="asset-owner" placeholder="選擇或輸入擁有人" />
+                <datalist id="owners"></datalist>
+              </div>
+
+              <div class="form-group">
                 <label for="asset-category">資產類別</label>
                 <input list="categories" id="asset-category" placeholder="選擇或輸入類別" />
                 <datalist id="categories"></datalist>
@@ -173,6 +179,7 @@
               <table id="asset-list-table" style="font-size: var(--font-size-sm);">
                 <thead>
                   <tr>
+                    <th>擁有人</th>
                     <th>類別</th>
                     <th>子類別</th>
                     <th>標的</th>
@@ -180,7 +187,7 @@
                   </tr>
                 </thead>
                 <tbody id="asset-list-body">
-                  <tr><td colspan="4" style="text-align: center; color: var(--color-text-secondary);">讀取中...</td></tr>
+                  <tr><td colspan="5" style="text-align: center; color: var(--color-text-secondary);">讀取中...</td></tr>
                 </tbody>
               </table>
             </div>

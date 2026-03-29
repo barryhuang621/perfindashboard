@@ -26,6 +26,7 @@ async function init() {
   const assetCategory = document.getElementById('asset-category');
   const subCategory = document.getElementById('sub-category');
   const assetTarget = document.getElementById('asset-target');
+  const assetOwner = document.getElementById('asset-owner');
   const addAssetBtn = document.getElementById('add-asset-btn');
 
   // 1. Sidebar Toggle Logic
@@ -64,37 +65,27 @@ async function init() {
     });
   });
 
+
+  let allAssets = []; // Global cache for filtering
+
   // 2.4 UI Update Logic (Unified)
   function updateUI(assets) {
+    allAssets = assets;
     const listBody = document.getElementById('asset-list-body');
-    const baseline = {
-      categories: [],
-      subCategories: [],
-      targets: []
-    };
 
     if (!Array.isArray(assets)) return;
 
-    // 1. Update Datalists
-    const dbCategories = [...new Set(assets.map(a => a.category).filter(Boolean))];
-    const dbSubCategories = [...new Set(assets.map(a => a.sub_category).filter(Boolean))];
-    const dbTargets = [...new Set(assets.map(a => a.target).filter(Boolean))];
-
-    const categories = [...new Set([...baseline.categories, ...dbCategories])];
-    const subCategories = [...new Set([...baseline.subCategories, ...dbSubCategories])];
-    const targets = [...new Set([...baseline.targets, ...dbTargets])];
-
-    renderDatalist('categories', categories);
-    renderDatalist('sub-categories', subCategories);
-    renderDatalist('targets', targets);
+    // Direct UI refresh based on total data
+    refreshDatalists();
 
     // 2. Update Management Table
     if (listBody) {
       if (assets.length === 0) {
-        listBody.innerHTML = '<tr><td colspan="4" style="text-align: center;">資料庫為空</td></tr>';
+        listBody.innerHTML = '<tr><td colspan="5" style="text-align: center;">資料庫為空</td></tr>';
       } else {
         listBody.innerHTML = assets.map(a => `
           <tr>
+            <td>${a.owner || '-'}</td>
             <td>${a.category || '-'}</td>
             <td>${a.sub_category || '-'}</td>
             <td>${a.target || '-'}</td>
@@ -108,6 +99,52 @@ async function init() {
     console.log('✅ UI updated with', assets.length, 'records');
   }
 
+  // 2.4.1 Cascading / Chained Datalist Logic (Owner-First)
+  function refreshDatalists() {
+    const currentOwn = assetOwner.value.trim();
+    const currentCat = assetCategory.value.trim();
+    const currentSub = subCategory.value.trim();
+
+    // 1. Owners (Always all)
+    const owners = [...new Set(allAssets.map(a => a.owner).filter(Boolean))];
+    
+    // 2. Categories (Filtered by Owner)
+    const categories = [...new Set(allAssets
+      .filter(a => !currentOwn || a.owner === currentOwn)
+      .map(a => a.category)
+      .filter(Boolean)
+    )];
+
+    // 3. Sub-categories (Filtered by Owner & Category)
+    const subCategories = [...new Set(allAssets
+      .filter(a => (!currentOwn || a.owner === currentOwn) && 
+                   (!currentCat || a.category === currentCat))
+      .map(a => a.sub_category)
+      .filter(Boolean)
+    )];
+
+    // 4. Targets (Filtered by Owner, Category, Sub)
+    const targets = [...new Set(allAssets
+      .filter(a => (!currentOwn || a.owner === currentOwn) && 
+                   (!currentCat || a.category === currentCat) &&
+                   (!currentSub || a.sub_category === currentSub))
+      .map(a => a.target)
+      .filter(Boolean)
+    )];
+
+    renderDatalist('owners', owners);
+    renderDatalist('categories', categories);
+    renderDatalist('sub-categories', subCategories);
+    renderDatalist('targets', targets);
+    
+    console.log('⛓️  Chained datalists (Owner-first) refreshed');
+  }
+
+  // Listen for inputs to trigger cascading refresh
+  [assetOwner, assetCategory, subCategory].forEach(input => {
+    input.addEventListener('input', refreshDatalists);
+  });
+
   // 2.5 Dynamic Datalist Logic
   async function updateFormDatalists() {
     console.log('🔄 Fetching fresh assets from database...');
@@ -118,7 +155,6 @@ async function init() {
       updateUI(assets);
     } catch (err) {
       console.error('❌ Failed to fetch assets:', err);
-      // Even on failure, try to render whatever baseline we have (empty in this case)
       updateUI([]);
     }
   }
@@ -127,11 +163,10 @@ async function init() {
     const oldDatalist = document.getElementById(id);
     if (!oldDatalist) return;
     
-    // 1. Create a brand new datalist element
+    // Create new datalist to force browser update
     const newDatalist = document.createElement('datalist');
     newDatalist.id = id;
     
-    // 2. Add options
     const uniqueOptions = [...new Set(options.filter(opt => opt))];
     uniqueOptions.forEach(opt => {
       const option = document.createElement('option');
@@ -139,10 +174,7 @@ async function init() {
       newDatalist.appendChild(option);
     });
     
-    // 3. Replace the old one in the DOM to break browser cache
     oldDatalist.parentNode.replaceChild(newDatalist, oldDatalist);
-    
-    console.log(`📡 Datalist [${id}] RECONSTRUCTED with ${uniqueOptions.length} items:`, uniqueOptions);
   }
 
   /**
@@ -151,35 +183,24 @@ async function init() {
   const assetListBody = document.getElementById('asset-list-body');
   if (assetListBody) {
     assetListBody.addEventListener('click', async (e) => {
-      // Check if the clicked element is a delete button
       if (e.target.classList.contains('delete-asset-btn')) {
         const id = e.target.getAttribute('data-id');
-        console.log('🗑️ Delete requested for ID:', id);
-        
         if (!confirm('確定要刪除這筆記錄嗎？')) return;
 
         try {
-          // Disable button during operation
           e.target.disabled = true;
           const originalText = e.target.textContent;
           e.target.textContent = '...';
 
           // Using ISOLATED GET for ultimate stability
-          alert('🚀 開始刪除... ID: ' + id);
           const res = await fetch(`/api/delete-item?id=${id}&t=${Date.now()}`);
-          
-          alert('🌐 伺服器狀態碼: ' + res.status);
-          
           const text = await res.text();
-          alert('📄 伺服器原始回傳: ' + text);
-          
           const result = JSON.parse(text);
           
           if (result.success) {
-            alert('✅ 成功刪除，更新介面中');
             updateFormDatalists();
           } else {
-            alert('❌ 伺服器錯誤: ' + (result.error || '不明內容'));
+            alert('❌ 刪除失敗：' + (result.error || '不明內容'));
             e.target.disabled = false;
             e.target.textContent = originalText;
           }
@@ -192,15 +213,13 @@ async function init() {
     });
   }
 
-  // Define a legacy global function just in case, but using delegation is preferred
+  // Global legacy function
   window.deleteAssetRecord = (id) => {
-    console.warn('⚠️ Legacy deleteAssetRecord called for ID:', id);
-    // Trigger the click logic manually if needed
     const btn = document.querySelector(`.delete-asset-btn[data-id="${id}"]`);
     if (btn) btn.click();
   };
 
-  // Populate datalists on initial load
+  // Initial load
   updateFormDatalists();
 
   // 3. Asset Submission Logic
@@ -208,11 +227,12 @@ async function init() {
     const data = {
       category: assetCategory.value.trim(),
       subCategory: subCategory.value.trim(),
-      target: assetTarget.value.trim()
+      target: assetTarget.value.trim(),
+      owner: assetOwner.value.trim()
     };
 
-    if (!data.category || !data.subCategory || !data.target) {
-      alert('請填寫所有欄位');
+    if (!data.category || !data.subCategory || !data.target || !data.owner) {
+      alert('請填寫所有欄位（包括擁有人）');
       return;
     }
 

@@ -14,6 +14,7 @@ CREATE TABLE IF NOT EXISTS asset_record (
   category TEXT NOT NULL,
   sub_category TEXT NOT NULL,
   target TEXT NOT NULL,
+  owner TEXT NOT NULL DEFAULT 'Self',
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  UNIQUE(category, sub_category, target)
+  UNIQUE(category, sub_category, target, owner)
 );
