@@ -163,7 +163,13 @@ async function init() {
           const originalText = e.target.textContent;
           e.target.textContent = '...';
 
-          const res = await fetch(`/api/assets?id=${id}`, { method: 'DELETE' });
+          // Using POST with action: 'delete' for maximum compatibility
+          const res = await fetch('/api/assets', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'delete', id: id })
+          });
+          
           console.log(`🌐 Response Status: ${res.status}`);
           
           const text = await res.text();

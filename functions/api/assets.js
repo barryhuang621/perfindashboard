@@ -5,8 +5,27 @@
 export async function onRequestPost(context) {
   try {
     const data = await context.request.json();
-    const { category, subCategory, target } = data;
+    const { category, subCategory, target, action, id } = data;
 
+    // Handle Deletion via POST (Proxy-safe)
+    if (action === 'delete' && id) {
+      console.log(`🗑️ POST-DELETE Request: Received ID [${id}]`);
+      const numericId = Number(id);
+      const result = await context.env.DB.prepare(
+        'DELETE FROM asset_record WHERE id = ?'
+      ).bind(numericId).run();
+      
+      console.log(`✅ POST-DELETE Execution: Changes [${result.meta.changes}] for ID [${numericId}]`);
+      
+      return new Response(JSON.stringify({ 
+        success: true, 
+        changes: result.meta.changes 
+      }), {
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Handle Creation
     if (!category || !subCategory || !target) {
       return new Response(JSON.stringify({ error: 'Missing required fields' }), {
         status: 400,
@@ -14,8 +33,6 @@ export async function onRequestPost(context) {
       });
     }
 
-    // Insert into D1. Using INSERT OR IGNORE to handle the unique constraint silently.
-    // Or we can use INSERT and return an error if it fails (user preferred not to write if exists).
     const statement = context.env.DB.prepare(
       'INSERT OR IGNORE INTO asset_record (category, sub_category, target) VALUES (?, ?, ?)'
     );
@@ -29,6 +46,7 @@ export async function onRequestPost(context) {
       headers: { 'Content-Type': 'application/json' },
     });
   } catch (err) {
+    console.error(`❌ POST Error: ${err.message}`);
     return new Response(JSON.stringify({ error: err.message }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' },
