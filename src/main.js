@@ -105,7 +105,7 @@ async function init() {
                 <td>${a.sub_category || '-'}</td>
                 <td>${a.target || '-'}</td>
                 <td style="text-align: center;">
-                  <button onclick="deleteAssetRecord(${a.id})" class="btn-text" style="color: #ef4444; padding: 2px 4px;">刪除</button>
+                  <button data-id="${a.id}" class="btn-text delete-asset-btn" style="color: #ef4444; padding: 2px 4px;">刪除</button>
                 </td>
               </tr>
             `).join('');
@@ -145,24 +145,50 @@ async function init() {
   }
 
   /**
-   * Global function to delete a record
+   * 2.6 Event Delegation for Deletion
    */
-  window.deleteAssetRecord = async (id) => {
-    if (!confirm('確定要刪除這筆記錄嗎？')) return;
+  const assetListBody = document.getElementById('asset-list-body');
+  if (assetListBody) {
+    assetListBody.addEventListener('click', async (e) => {
+      // Check if the clicked element is a delete button
+      if (e.target.classList.contains('delete-asset-btn')) {
+        const id = e.target.getAttribute('data-id');
+        console.log('🗑️ Delete requested for ID:', id);
+        
+        if (!confirm('確定要刪除這筆記錄嗎？')) return;
 
-    try {
-      const res = await fetch(`/api/assets?id=${id}`, { method: 'DELETE' });
-      const result = await res.json();
-      
-      if (result.success) {
-        console.log('✅ Record deleted:', id);
-        updateFormDatalists();
-      } else {
-        alert('❌ 刪除失敗：' + result.error);
+        try {
+          // Disable button during operation
+          e.target.disabled = true;
+          e.target.textContent = '...';
+
+          const res = await fetch(`/api/assets?id=${id}`, { method: 'DELETE' });
+          const result = await res.json();
+          
+          if (result.success) {
+            console.log('✅ Record deleted successfully');
+            updateFormDatalists();
+          } else {
+            alert('❌ 刪除失敗：' + result.error);
+            e.target.disabled = false;
+            e.target.textContent = '刪除';
+          }
+        } catch (err) {
+          console.error('❌ Network error during deletion:', err);
+          alert('❌ 網路錯誤，請稍後再試。');
+          e.target.disabled = false;
+          e.target.textContent = '刪除';
+        }
       }
-    } catch (err) {
-      alert('❌ 網路錯誤，請稍後再試。');
-    }
+    });
+  }
+
+  // Define a legacy global function just in case, but using delegation is preferred
+  window.deleteAssetRecord = (id) => {
+    console.warn('⚠️ Legacy deleteAssetRecord called for ID:', id);
+    // Trigger the click logic manually if needed
+    const btn = document.querySelector(`.delete-asset-btn[data-id="${id}"]`);
+    if (btn) btn.click();
   };
 
   // Populate datalists on initial load
